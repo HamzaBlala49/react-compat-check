@@ -16,6 +16,13 @@ export async function analyzeProject(
     includeOptional: options.includeOptional,
   });
   
+  // Build a map of all project dependencies for companion upgrade analysis
+  const projectDependencies: Record<string, string> = {
+    ...(packageJson.dependencies || {}),
+    ...(packageJson.devDependencies || {}),
+    ...(packageJson.optionalDependencies || {}),
+  };
+  
   // Skip react and react-dom themselves
   const filteredDeps = dependencies.filter(dep => 
     dep.name !== 'react' && dep.name !== 'react-dom'
@@ -23,7 +30,7 @@ export async function analyzeProject(
   
   // Analyze all dependencies in parallel with concurrency limit
   const analysisPromises = filteredDeps.map(dep =>
-    analyzeDependency(dep.name, dep.version, targetReactVersion, dep.type)
+    analyzeDependency(dep.name, dep.version, targetReactVersion, dep.type, projectDependencies)
   );
   
   const results = await Promise.all(analysisPromises);

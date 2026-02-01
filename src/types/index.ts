@@ -35,6 +35,15 @@ export interface CLIOptions {
 }
 
 /**
+ * Companion dependency that needs upgrading along with the main package
+ */
+export interface RequiredUpgrade {
+  name: string;
+  currentVersion: string;
+  requiredVersion: string;
+}
+
+/**
  * Result of analyzing a single dependency
  */
 export interface DependencyAnalysis {
@@ -45,6 +54,7 @@ export interface DependencyAnalysis {
   nearestCompatibleVersion: string | null;
   latestVersion: string;
   dependencyType: DependencyType;
+  requiredUpgrades: RequiredUpgrade[];
 }
 
 /**

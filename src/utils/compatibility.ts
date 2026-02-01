@@ -4,7 +4,8 @@ import type {
   CompatibilityStatus, 
   DependencyAnalysis, 
   DependencyType,
-  NpmVersionMetadata 
+  NpmVersionMetadata,
+  RequiredUpgrade
 } from '../types/index.js';
 
 /**
@@ -143,13 +144,86 @@ export async function findLatestCompatibleVersion(
 }
 
 /**
+ * Analyze required companion upgrades when upgrading to a new version
+ * This finds dependencies/peerDependencies that the new version requires
+ * which are different from what's currently installed in the project
+ */
+async function analyzeRequiredUpgrades(
+  packageName: string,
+  targetVersion: string,
+  projectDependencies: Record<string, string>
+): Promise<RequiredUpgrade[]> {
+  const requiredUpgrades: RequiredUpgrade[] = [];
+  
+  try {
+    const metadata = await fetchPackageMetadata(packageName);
+    const targetVersionMeta = metadata.versions[targetVersion];
+    
+    if (!targetVersionMeta) {
+      return [];
+    }
+    
+    // Combine dependencies and peerDependencies from the target version
+    const peerDeps = targetVersionMeta.peerDependencies || {};
+    const filteredPeerDeps: Record<string, string> = {};
+    for (const [key, value] of Object.entries(peerDeps)) {
+      if (value !== undefined) {
+        filteredPeerDeps[key] = value;
+      }
+    }
+    
+    const targetDeps: Record<string, string> = {
+      ...(targetVersionMeta.dependencies || {}),
+      ...filteredPeerDeps,
+    };
+    
+    // Check each dependency required by the new version
+    for (const [depName, requiredRange] of Object.entries(targetDeps)) {
+      // Skip react and react-dom as they're the target we're upgrading for
+      if (depName === 'react' || depName === 'react-dom') {
+        continue;
+      }
+      
+      const currentVersion = projectDependencies[depName];
+      
+      if (!currentVersion) {
+        // Skip new dependencies - only show existing packages that need upgrading
+        continue;
+      }
+      
+      // Clean the current version (remove ^ ~ etc)
+      const cleanCurrentVersion = currentVersion.replace(/^[\^~>=<]+/, '');
+      
+      // Check if current version satisfies the required range
+      try {
+        const normalizedRange = semver.validRange(requiredRange);
+        if (normalizedRange && !semver.satisfies(cleanCurrentVersion, normalizedRange)) {
+          requiredUpgrades.push({
+            name: depName,
+            currentVersion: cleanCurrentVersion,
+            requiredVersion: requiredRange,
+          });
+        }
+      } catch {
+        // If semver can't parse, skip this check
+      }
+    }
+  } catch {
+    // If we can't fetch metadata, return empty array
+  }
+  
+  return requiredUpgrades;
+}
+
+/**
  * Analyze a single dependency for React compatibility
  */
 export async function analyzeDependency(
   packageName: string,
   installedVersion: string,
   targetReactVersion: string,
-  dependencyType: DependencyType
+  dependencyType: DependencyType,
+  projectDependencies: Record<string, string>
 ): Promise<DependencyAnalysis> {
   try {
     const metadata = await fetchPackageMetadata(packageName);
@@ -170,6 +244,7 @@ export async function analyzeDependency(
         nearestCompatibleVersion: null,
         latestVersion,
         dependencyType,
+        requiredUpgrades: [],
       };
     }
     
@@ -177,6 +252,7 @@ export async function analyzeDependency(
     const status = checkReactCompatibility(targetReactVersion, reactPeerDep);
     
     let nearestCompatibleVersion: string | null = null;
+    let requiredUpgrades: RequiredUpgrade[] = [];
     
     if (status === 'incompatible') {
       nearestCompatibleVersion = await findNearestCompatibleVersion(
@@ -184,6 +260,15 @@ export async function analyzeDependency(
         cleanVersion,
         targetReactVersion
       );
+      
+      // If we found a compatible version, check what upgrades are required
+      if (nearestCompatibleVersion) {
+        requiredUpgrades = await analyzeRequiredUpgrades(
+          packageName,
+          nearestCompatibleVersion,
+          projectDependencies
+        );
+      }
     }
     
     return {
@@ -194,6 +279,7 @@ export async function analyzeDependency(
       nearestCompatibleVersion,
       latestVersion,
       dependencyType,
+      requiredUpgrades,
     };
   } catch (error) {
     // If we can't fetch the package, return unknown status
@@ -205,6 +291,7 @@ export async function analyzeDependency(
       nearestCompatibleVersion: null,
       latestVersion: 'unknown',
       dependencyType,
+      requiredUpgrades: [],
     };
   }
 }

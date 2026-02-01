@@ -103,15 +103,35 @@ export function displayTable(result: AnalysisResult): void {
   console.log(table.toString());
   console.log();
   
+  // Display required companion upgrades
+  const depsWithRequiredUpgrades = result.dependencies.filter(d => d.requiredUpgrades.length > 0);
+  if (depsWithRequiredUpgrades.length > 0) {
+    console.log(chalk.bold.magenta('📦 Required Companion Upgrades:'));
+    console.log(chalk.dim('  When upgrading these packages, you also need to upgrade their dependencies:'));
+    console.log();
+    
+    for (const dep of depsWithRequiredUpgrades) {
+      console.log(`  ${chalk.cyan(dep.name)} ${chalk.dim(`${dep.installedVersion} → ${dep.nearestCompatibleVersion}`)}`);
+      for (const upgrade of dep.requiredUpgrades) {
+        console.log(`    ${chalk.yellow('└─ ↑ ')} ${chalk.bold(upgrade.name)} ${chalk.dim(upgrade.currentVersion + ' →')} ${chalk.yellow(upgrade.requiredVersion)}`);
+      }
+      console.log();
+    }
+  }
+  
   // Summary
   const compatible = result.dependencies.filter(d => d.status === 'compatible').length;
   const incompatible = result.dependencies.filter(d => d.status === 'incompatible').length;
   const unknown = result.dependencies.filter(d => d.status === 'unknown').length;
+  const withRequiredUpgrades = depsWithRequiredUpgrades.length;
   
   console.log(chalk.bold('Summary:'));
   console.log(`  ${chalk.green('✓')} Compatible: ${compatible}`);
   console.log(`  ${chalk.red('✗')} Incompatible: ${incompatible}`);
   console.log(`  ${chalk.yellow('?')} Unknown: ${unknown}`);
+  if (withRequiredUpgrades > 0) {
+    console.log(`  ${chalk.magenta('📦')} With companion upgrades needed: ${withRequiredUpgrades}`);
+  }
   console.log();
 }
 
@@ -119,6 +139,8 @@ export function displayTable(result: AnalysisResult): void {
  * Output analysis results as JSON
  */
 export function outputJson(result: AnalysisResult): void {
+  const depsWithRequiredUpgrades = result.dependencies.filter(d => d.requiredUpgrades.length > 0);
+  
   const output = {
     targetReactVersion: result.targetReactVersion,
     summary: {
@@ -126,8 +148,10 @@ export function outputJson(result: AnalysisResult): void {
       compatible: result.dependencies.filter(d => d.status === 'compatible').length,
       incompatible: result.dependencies.filter(d => d.status === 'incompatible').length,
       unknown: result.dependencies.filter(d => d.status === 'unknown').length,
+      withRequiredUpgrades: depsWithRequiredUpgrades.length,
     },
     hasIncompatible: result.hasIncompatible,
+    hasRequiredUpgrades: depsWithRequiredUpgrades.length > 0,
     dependencies: result.dependencies.map(dep => ({
       name: dep.name,
       installedVersion: dep.installedVersion,
@@ -136,6 +160,11 @@ export function outputJson(result: AnalysisResult): void {
       nearestCompatibleVersion: dep.nearestCompatibleVersion,
       latestVersion: dep.latestVersion,
       dependencyType: dep.dependencyType,
+      requiredUpgrades: dep.requiredUpgrades.map(upgrade => ({
+        name: upgrade.name,
+        currentVersion: upgrade.currentVersion,
+        requiredVersion: upgrade.requiredVersion,
+      })),
     })),
   };
   
