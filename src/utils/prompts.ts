@@ -1,6 +1,7 @@
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { getMajorReactVersions, fetchReactVersions } from './registry.js';
+import { collectCompanionUpgrades } from './upgrader.js';
 import type { DependencyAnalysis, UpgradeAction, UpgradeSelection } from '../types/index.js';
 
 /**
@@ -121,7 +122,8 @@ export async function promptUpgradeActions(
  * Prompt user to confirm upgrade
  */
 export async function confirmUpgrade(
-  selections: UpgradeSelection[]
+  selections: UpgradeSelection[],
+  allDeps: DependencyAnalysis[]
 ): Promise<boolean> {
   const upgrades = selections.filter(s => s.action !== 'skip');
   
@@ -129,11 +131,25 @@ export async function confirmUpgrade(
     return false;
   }
   
+  // Collect companion upgrades
+  const companionUpgrades = collectCompanionUpgrades(selections, allDeps);
+  
   console.log();
   console.log(chalk.bold('The following packages will be upgraded:'));
+  console.log();
+  console.log(chalk.dim('  Main packages:'));
   for (const upgrade of upgrades) {
-    console.log(`  ${chalk.cyan(upgrade.packageName)} → ${chalk.green(upgrade.targetVersion)}`);
+    console.log(`    ${chalk.cyan(upgrade.packageName)} → ${chalk.green(upgrade.targetVersion)}`);
   }
+  
+  if (companionUpgrades.length > 0) {
+    console.log();
+    console.log(chalk.dim('  Companion packages:'));
+    for (const companion of companionUpgrades) {
+      console.log(`    ${chalk.magenta(companion.name)} ${chalk.dim(companion.currentVersion + ' →')} ${chalk.yellow(companion.requiredVersion)}`);
+    }
+  }
+  
   console.log();
   
   const { confirmed } = await inquirer.prompt<{ confirmed: boolean }>([

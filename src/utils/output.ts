@@ -103,17 +103,33 @@ export function displayTable(result: AnalysisResult): void {
   console.log(table.toString());
   console.log();
   
-  // Display required companion upgrades
-  const depsWithRequiredUpgrades = result.dependencies.filter(d => d.requiredUpgrades.length > 0);
+  // Display required companion upgrades (show for nearest version as default preview)
+  const depsWithRequiredUpgrades = result.dependencies.filter(
+    d => d.requiredUpgradesForNearest.length > 0 || d.requiredUpgradesForLatest.length > 0
+  );
   if (depsWithRequiredUpgrades.length > 0) {
     console.log(chalk.bold.magenta('📦 Required Companion Upgrades:'));
     console.log(chalk.dim('  When upgrading these packages, you also need to upgrade their dependencies:'));
     console.log();
     
     for (const dep of depsWithRequiredUpgrades) {
-      console.log(`  ${chalk.cyan(dep.name)} ${chalk.dim(`${dep.installedVersion} → ${dep.nearestCompatibleVersion}`)}`);
-      for (const upgrade of dep.requiredUpgrades) {
-        console.log(`    ${chalk.yellow('└─ ↑ ')} ${chalk.bold(upgrade.name)} ${chalk.dim(upgrade.currentVersion + ' →')} ${chalk.yellow(upgrade.requiredVersion)}`);
+      // Show nearest compatible upgrades
+      if (dep.nearestCompatibleVersion && dep.requiredUpgradesForNearest.length > 0) {
+        console.log(`  ${chalk.cyan(dep.name)} → ${chalk.green(dep.nearestCompatibleVersion)} ${chalk.dim('(nearest)')}`);
+        for (const upgrade of dep.requiredUpgradesForNearest) {
+          console.log(`    ${chalk.yellow('└─ ↑ ')} ${chalk.bold(upgrade.name)} ${chalk.dim(upgrade.currentVersion + ' →')} ${chalk.yellow(upgrade.requiredVersion)}`);
+        }
+      }
+      
+      // Show latest upgrades if different
+      if (dep.requiredUpgradesForLatest.length > 0) {
+        const latestDifferent = dep.nearestCompatibleVersion !== dep.latestVersion;
+        if (latestDifferent) {
+          console.log(`  ${chalk.cyan(dep.name)} → ${chalk.blue(dep.latestVersion)} ${chalk.dim('(latest)')}`);
+          for (const upgrade of dep.requiredUpgradesForLatest) {
+            console.log(`    ${chalk.yellow('└─ ↑ ')} ${chalk.bold(upgrade.name)} ${chalk.dim(upgrade.currentVersion + ' →')} ${chalk.yellow(upgrade.requiredVersion)}`);
+          }
+        }
       }
       console.log();
     }
@@ -139,7 +155,9 @@ export function displayTable(result: AnalysisResult): void {
  * Output analysis results as JSON
  */
 export function outputJson(result: AnalysisResult): void {
-  const depsWithRequiredUpgrades = result.dependencies.filter(d => d.requiredUpgrades.length > 0);
+  const depsWithRequiredUpgrades = result.dependencies.filter(
+    d => d.requiredUpgradesForNearest.length > 0 || d.requiredUpgradesForLatest.length > 0
+  );
   
   const output = {
     targetReactVersion: result.targetReactVersion,
@@ -160,7 +178,12 @@ export function outputJson(result: AnalysisResult): void {
       nearestCompatibleVersion: dep.nearestCompatibleVersion,
       latestVersion: dep.latestVersion,
       dependencyType: dep.dependencyType,
-      requiredUpgrades: dep.requiredUpgrades.map(upgrade => ({
+      requiredUpgradesForNearest: dep.requiredUpgradesForNearest.map(upgrade => ({
+        name: upgrade.name,
+        currentVersion: upgrade.currentVersion,
+        requiredVersion: upgrade.requiredVersion,
+      })),
+      requiredUpgradesForLatest: dep.requiredUpgradesForLatest.map(upgrade => ({
         name: upgrade.name,
         currentVersion: upgrade.currentVersion,
         requiredVersion: upgrade.requiredVersion,

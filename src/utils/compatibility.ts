@@ -244,7 +244,8 @@ export async function analyzeDependency(
         nearestCompatibleVersion: null,
         latestVersion,
         dependencyType,
-        requiredUpgrades: [],
+        requiredUpgradesForNearest: [],
+        requiredUpgradesForLatest: [],
       };
     }
     
@@ -252,23 +253,31 @@ export async function analyzeDependency(
     const status = checkReactCompatibility(targetReactVersion, reactPeerDep);
     
     let nearestCompatibleVersion: string | null = null;
-    let requiredUpgrades: RequiredUpgrade[] = [];
+    let requiredUpgradesForNearest: RequiredUpgrade[] = [];
+    let requiredUpgradesForLatest: RequiredUpgrade[] = [];
     
     if (status === 'incompatible') {
+      // Find nearest compatible version and its required upgrades
       nearestCompatibleVersion = await findNearestCompatibleVersion(
         packageName,
         cleanVersion,
         targetReactVersion
       );
       
-      // If we found a compatible version, check what upgrades are required
       if (nearestCompatibleVersion) {
-        requiredUpgrades = await analyzeRequiredUpgrades(
+        requiredUpgradesForNearest = await analyzeRequiredUpgrades(
           packageName,
           nearestCompatibleVersion,
           projectDependencies
         );
       }
+      
+      // Calculate required upgrades for latest version
+      requiredUpgradesForLatest = await analyzeRequiredUpgrades(
+        packageName,
+        latestVersion,
+        projectDependencies
+      );
     }
     
     return {
@@ -279,7 +288,8 @@ export async function analyzeDependency(
       nearestCompatibleVersion,
       latestVersion,
       dependencyType,
-      requiredUpgrades,
+      requiredUpgradesForNearest,
+      requiredUpgradesForLatest,
     };
   } catch (error) {
     // If we can't fetch the package, return unknown status
@@ -291,7 +301,8 @@ export async function analyzeDependency(
       nearestCompatibleVersion: null,
       latestVersion: 'unknown',
       dependencyType,
-      requiredUpgrades: [],
+      requiredUpgradesForNearest: [],
+      requiredUpgradesForLatest: [],
     };
   }
 }

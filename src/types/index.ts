@@ -54,7 +54,10 @@ export interface DependencyAnalysis {
   nearestCompatibleVersion: string | null;
   latestVersion: string;
   dependencyType: DependencyType;
-  requiredUpgrades: RequiredUpgrade[];
+  /** Companion upgrades required when upgrading to nearest compatible version */
+  requiredUpgradesForNearest: RequiredUpgrade[];
+  /** Companion upgrades required when upgrading to latest version */
+  requiredUpgradesForLatest: RequiredUpgrade[];
 }
 
 /**

@@ -110,7 +110,7 @@ async function run(options: CLIOptions): Promise<void> {
             console.log(`  ${chalk.cyan(upgrade.packageName)} → ${chalk.green(upgrade.targetVersion)}`);
           }
           
-          const success = await applyUpgrades(selections, result.dependencies);
+          const success = await applyUpgrades(selections, result.dependencies, true);
           if (!success) {
             process.exit(2 as ExitCode);
           }
@@ -122,10 +122,10 @@ async function run(options: CLIOptions): Promise<void> {
       
       const hasUpgrades = selections.some(s => s.action !== 'skip');
       if (hasUpgrades) {
-        const confirmed = await confirmUpgrade(selections);
+        const confirmed = await confirmUpgrade(selections, result.dependencies);
         
         if (confirmed) {
-          const success = await applyUpgrades(selections, result.dependencies);
+          const success = await applyUpgrades(selections, result.dependencies, true);
           if (success) {
             displaySuccess('Dependencies upgraded successfully!');
           } else {
