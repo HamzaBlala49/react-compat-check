@@ -88,7 +88,7 @@ export async function promptUpgradeActions(
     });
     
     choices.push({
-      name: 'Skip',
+      name: 'Skip (ignore, move to next)',
       value: 'skip',
     });
     

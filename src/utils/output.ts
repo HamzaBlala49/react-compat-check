@@ -138,13 +138,11 @@ export function displayTable(result: AnalysisResult): void {
   // Summary
   const compatible = result.dependencies.filter(d => d.status === 'compatible').length;
   const incompatible = result.dependencies.filter(d => d.status === 'incompatible').length;
-  const unknown = result.dependencies.filter(d => d.status === 'unknown').length;
   const withRequiredUpgrades = depsWithRequiredUpgrades.length;
   
   console.log(chalk.bold('Summary:'));
   console.log(`  ${chalk.green('✓')} Compatible: ${compatible}`);
   console.log(`  ${chalk.red('✗')} Incompatible: ${incompatible}`);
-  console.log(`  ${chalk.yellow('?')} Unknown: ${unknown}`);
   if (withRequiredUpgrades > 0) {
     console.log(`  ${chalk.magenta('📦')} With companion upgrades needed: ${withRequiredUpgrades}`);
   }
@@ -165,7 +163,6 @@ export function outputJson(result: AnalysisResult): void {
       total: result.dependencies.length,
       compatible: result.dependencies.filter(d => d.status === 'compatible').length,
       incompatible: result.dependencies.filter(d => d.status === 'incompatible').length,
-      unknown: result.dependencies.filter(d => d.status === 'unknown').length,
       withRequiredUpgrades: depsWithRequiredUpgrades.length,
     },
     hasIncompatible: result.hasIncompatible,

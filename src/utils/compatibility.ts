@@ -335,21 +335,10 @@ function findClosestVersion(
 
 /**
  * Filter out packages that are not React-related
- * (packages without React peer dependency that we should skip)
+ * Only include packages that explicitly declare React as a peer dependency
  */
 export function isReactRelatedPackage(analysis: DependencyAnalysis): boolean {
-  // If the package has a React peer dependency, it's React-related
-  if (analysis.supportedReactRange !== null) {
-    return true;
-  }
-  
-  // Some packages that commonly depend on React but might not declare it
-  const reactRelatedPackages = [
-    'react', 'react-dom', 'react-scripts', 'react-router', 
-    '@types/react', '@types/react-dom'
-  ];
-  
-  return reactRelatedPackages.some(pkg => 
-    analysis.name === pkg || analysis.name.startsWith(`${pkg}-`)
-  );
+  // Only include packages that have a React peer dependency declared
+  // Packages without peerDependencies.react are not relevant to React compatibility
+  return analysis.supportedReactRange !== null;
 }
