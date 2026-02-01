@@ -10,7 +10,7 @@ import type { DependencyAnalysis, UpgradeAction, UpgradeSelection } from '../typ
 export async function promptReactVersion(): Promise<string> {
   const majorVersions = await getMajorReactVersions();
   const allVersions = await fetchReactVersions();
-  
+
   // Show major versions first, with option to see all
   const choices = [
     ...majorVersions.slice(0, 5).map(v => ({
@@ -23,7 +23,7 @@ export async function promptReactVersion(): Promise<string> {
       value: '__all__',
     },
   ];
-  
+
   const { version } = await inquirer.prompt<{ version: string }>([
     {
       type: 'list',
@@ -32,11 +32,11 @@ export async function promptReactVersion(): Promise<string> {
       choices,
     },
   ]);
-  
+
   if (version === '__all__') {
     // Show all stable versions
     const stableVersions = allVersions.filter(v => !v.includes('-'));
-    
+
     const { selectedVersion } = await inquirer.prompt<{ selectedVersion: string }>([
       {
         type: 'list',
@@ -49,10 +49,10 @@ export async function promptReactVersion(): Promise<string> {
         pageSize: 15,
       },
     ]);
-    
+
     return selectedVersion;
   }
-  
+
   return version;
 }
 
@@ -65,33 +65,33 @@ export async function promptUpgradeActions(
   if (incompatibleDeps.length === 0) {
     return [];
   }
-  
+
   console.log();
   console.log(chalk.bold('Choose upgrade actions for incompatible packages:'));
   console.log();
-  
+
   const selections: UpgradeSelection[] = [];
-  
+
   for (const dep of incompatibleDeps) {
     const choices: Array<{ name: string; value: UpgradeAction }> = [];
-    
+
     if (dep.nearestCompatibleVersion) {
       choices.push({
         name: `Upgrade to nearest compatible (${chalk.green(dep.nearestCompatibleVersion)})`,
         value: 'nearest-compatible',
       });
     }
-    
+
     choices.push({
       name: `Upgrade to latest (${chalk.cyan(dep.latestVersion)})`,
       value: 'latest',
     });
-    
+
     choices.push({
       name: 'Skip (ignore, move to next)',
       value: 'skip',
     });
-    
+
     const { action } = await inquirer.prompt<{ action: UpgradeAction }>([
       {
         type: 'list',
@@ -100,21 +100,21 @@ export async function promptUpgradeActions(
         choices,
       },
     ]);
-    
+
     let targetVersion: string | null = null;
     if (action === 'nearest-compatible') {
       targetVersion = dep.nearestCompatibleVersion;
     } else if (action === 'latest') {
       targetVersion = dep.latestVersion;
     }
-    
+
     selections.push({
       packageName: dep.name,
       action,
       targetVersion,
     });
   }
-  
+
   return selections;
 }
 
@@ -126,14 +126,14 @@ export async function confirmUpgrade(
   allDeps: DependencyAnalysis[]
 ): Promise<boolean> {
   const upgrades = selections.filter(s => s.action !== 'skip');
-  
+
   if (upgrades.length === 0) {
     return false;
   }
-  
+
   // Collect companion upgrades
   const companionUpgrades = collectCompanionUpgrades(selections, allDeps);
-  
+
   console.log();
   console.log(chalk.bold('The following packages will be upgraded:'));
   console.log();
@@ -141,17 +141,19 @@ export async function confirmUpgrade(
   for (const upgrade of upgrades) {
     console.log(`    ${chalk.cyan(upgrade.packageName)} → ${chalk.green(upgrade.targetVersion)}`);
   }
-  
+
   if (companionUpgrades.length > 0) {
     console.log();
     console.log(chalk.dim('  Companion packages:'));
     for (const companion of companionUpgrades) {
-      console.log(`    ${chalk.magenta(companion.name)} ${chalk.dim(companion.currentVersion + ' →')} ${chalk.yellow(companion.requiredVersion)}`);
+      console.log(
+        `    ${chalk.magenta(companion.name)} ${chalk.dim(companion.currentVersion + ' →')} ${chalk.yellow(companion.requiredVersion)}`
+      );
     }
   }
-  
+
   console.log();
-  
+
   const { confirmed } = await inquirer.prompt<{ confirmed: boolean }>([
     {
       type: 'confirm',
@@ -160,6 +162,6 @@ export async function confirmUpgrade(
       default: true,
     },
   ]);
-  
+
   return confirmed;
 }

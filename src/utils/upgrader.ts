@@ -1,12 +1,17 @@
 import { spawn } from 'child_process';
 import chalk from 'chalk';
-import { 
-  readPackageJson, 
-  writePackageJson, 
-  detectPackageManager, 
-  getInstallCommand 
+import {
+  readPackageJson,
+  writePackageJson,
+  detectPackageManager,
+  getInstallCommand,
 } from './package-parser.js';
-import type { UpgradeSelection, DependencyAnalysis, FixMode, RequiredUpgrade } from '../types/index.js';
+import type {
+  UpgradeSelection,
+  DependencyAnalysis,
+  FixMode,
+  RequiredUpgrade,
+} from '../types/index.js';
 
 /**
  * Apply automatic fix mode to all incompatible dependencies
@@ -22,7 +27,7 @@ export function applyFixMode(
       targetVersion: null,
     }));
   }
-  
+
   return incompatibleDeps.map(dep => {
     if (fixMode === 'nearest' && dep.nearestCompatibleVersion) {
       return {
@@ -31,7 +36,7 @@ export function applyFixMode(
         targetVersion: dep.nearestCompatibleVersion,
       };
     }
-    
+
     if (fixMode === 'latest') {
       return {
         packageName: dep.name,
@@ -39,7 +44,7 @@ export function applyFixMode(
         targetVersion: dep.latestVersion,
       };
     }
-    
+
     // Default to latest if nearest not available
     return {
       packageName: dep.name,
@@ -59,18 +64,19 @@ export function collectCompanionUpgrades(
 ): RequiredUpgrade[] {
   const companionUpgrades: RequiredUpgrade[] = [];
   const seen = new Set<string>();
-  
+
   for (const selection of selections) {
     if (selection.action === 'skip') continue;
-    
+
     const dep = allDeps.find(d => d.name === selection.packageName);
     if (!dep) continue;
-    
+
     // Choose the correct companion upgrades based on the selected action
-    const upgrades = selection.action === 'nearest-compatible' 
-      ? dep.requiredUpgradesForNearest 
-      : dep.requiredUpgradesForLatest;
-    
+    const upgrades =
+      selection.action === 'nearest-compatible'
+        ? dep.requiredUpgradesForNearest
+        : dep.requiredUpgradesForLatest;
+
     for (const upgrade of upgrades) {
       if (!seen.has(upgrade.name)) {
         seen.add(upgrade.name);
@@ -78,7 +84,7 @@ export function collectCompanionUpgrades(
       }
     }
   }
-  
+
   return companionUpgrades;
 }
 
@@ -92,14 +98,14 @@ export async function updatePackageJson(
 ): Promise<void> {
   const packageJson = await readPackageJson();
   const upgrades = selections.filter(s => s.action !== 'skip' && s.targetVersion);
-  
+
   // Update main packages
   for (const upgrade of upgrades) {
     const dep = allDeps.find(d => d.name === upgrade.packageName);
     if (!dep || !upgrade.targetVersion) continue;
-    
+
     const newVersion = `^${upgrade.targetVersion}`;
-    
+
     // Update the correct dependency section
     switch (dep.dependencyType) {
       case 'dependencies':
@@ -119,11 +125,11 @@ export async function updatePackageJson(
         break;
     }
   }
-  
+
   // Update companion packages if requested
   if (includeCompanions) {
     const companionUpgrades = collectCompanionUpgrades(selections, allDeps);
-    
+
     for (const companion of companionUpgrades) {
       // Find where the companion package is currently located
       if (packageJson.dependencies?.[companion.name]) {
@@ -134,15 +140,21 @@ export async function updatePackageJson(
         packageJson.optionalDependencies[companion.name] = companion.requiredVersion;
       }
     }
-    
+
     if (companionUpgrades.length > 0) {
-      console.log(chalk.magenta(`  Also updating ${companionUpgrades.length} companion package(s):`));
+      console.log(
+        chalk.magenta(`  Also updating ${companionUpgrades.length} companion package(s):`)
+      );
       for (const companion of companionUpgrades) {
-        console.log(chalk.dim(`    ${companion.name}: ${companion.currentVersion} → ${companion.requiredVersion}`));
+        console.log(
+          chalk.dim(
+            `    ${companion.name}: ${companion.currentVersion} → ${companion.requiredVersion}`
+          )
+        );
       }
     }
   }
-  
+
   await writePackageJson(packageJson);
   console.log(chalk.green('✓ Updated package.json'));
 }
@@ -153,19 +165,19 @@ export async function updatePackageJson(
 export async function runInstall(): Promise<boolean> {
   const packageManager = await detectPackageManager();
   const installCommand = getInstallCommand(packageManager);
-  
+
   console.log();
   console.log(chalk.blue(`Running: ${installCommand}`));
   console.log();
-  
-  return new Promise((resolve) => {
+
+  return new Promise(resolve => {
     const [cmd, ...args] = installCommand.split(' ');
     const child = spawn(cmd, args, {
       stdio: 'inherit',
       shell: true,
     });
-    
-    child.on('close', (code) => {
+
+    child.on('close', code => {
       if (code === 0) {
         console.log();
         console.log(chalk.green('✓ Installation complete'));
@@ -176,8 +188,8 @@ export async function runInstall(): Promise<boolean> {
         resolve(false);
       }
     });
-    
-    child.on('error', (error) => {
+
+    child.on('error', error => {
       console.error(chalk.red(`Error running install: ${error.message}`));
       resolve(false);
     });
@@ -193,12 +205,12 @@ export async function applyUpgrades(
   includeCompanions: boolean = true
 ): Promise<boolean> {
   const upgrades = selections.filter(s => s.action !== 'skip');
-  
+
   if (upgrades.length === 0) {
     console.log(chalk.yellow('No upgrades to apply.'));
     return true;
   }
-  
+
   try {
     await updatePackageJson(selections, allDeps, includeCompanions);
     return await runInstall();

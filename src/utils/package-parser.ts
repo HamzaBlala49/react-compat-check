@@ -8,7 +8,7 @@ import type { PackageJson, DependencyType, PackageManager } from '../types/index
  */
 export async function readPackageJson(projectPath: string = process.cwd()): Promise<PackageJson> {
   const packageJsonPath = join(projectPath, 'package.json');
-  
+
   try {
     const content = await readFile(packageJsonPath, 'utf-8');
     return JSON.parse(content) as PackageJson;
@@ -24,7 +24,7 @@ export async function readPackageJson(projectPath: string = process.cwd()): Prom
  * Write updated package.json to disk
  */
 export async function writePackageJson(
-  packageJson: PackageJson, 
+  packageJson: PackageJson,
   projectPath: string = process.cwd()
 ): Promise<void> {
   const packageJsonPath = join(projectPath, 'package.json');
@@ -43,41 +43,43 @@ export function getDependencies(
   }
 ): Array<{ name: string; version: string; type: DependencyType }> {
   const dependencies: Array<{ name: string; version: string; type: DependencyType }> = [];
-  
+
   // Always include regular dependencies
   if (packageJson.dependencies) {
     for (const [name, version] of Object.entries(packageJson.dependencies)) {
       dependencies.push({ name, version, type: 'dependencies' });
     }
   }
-  
+
   // Include dev dependencies if flag is set
   if (options.includeDev && packageJson.devDependencies) {
     for (const [name, version] of Object.entries(packageJson.devDependencies)) {
       dependencies.push({ name, version, type: 'devDependencies' });
     }
   }
-  
+
   // Include optional dependencies if flag is set
   if (options.includeOptional && packageJson.optionalDependencies) {
     for (const [name, version] of Object.entries(packageJson.optionalDependencies)) {
       dependencies.push({ name, version, type: 'optionalDependencies' });
     }
   }
-  
+
   return dependencies;
 }
 
 /**
  * Detect the package manager being used in the project
  */
-export async function detectPackageManager(projectPath: string = process.cwd()): Promise<PackageManager> {
+export async function detectPackageManager(
+  projectPath: string = process.cwd()
+): Promise<PackageManager> {
   const lockFiles: Array<{ file: string; manager: PackageManager }> = [
     { file: 'pnpm-lock.yaml', manager: 'pnpm' },
     { file: 'yarn.lock', manager: 'yarn' },
     { file: 'package-lock.json', manager: 'npm' },
   ];
-  
+
   for (const { file, manager } of lockFiles) {
     try {
       await access(join(projectPath, file), constants.F_OK);
@@ -86,7 +88,7 @@ export async function detectPackageManager(projectPath: string = process.cwd()):
       // File doesn't exist, continue checking
     }
   }
-  
+
   // Default to npm if no lockfile is found
   return 'npm';
 }

@@ -10,37 +10,35 @@ export async function analyzeProject(
   options: Pick<CLIOptions, 'includeDev' | 'includeOptional'>
 ): Promise<AnalysisResult> {
   const packageJson = await readPackageJson();
-  
+
   const dependencies = getDependencies(packageJson, {
     includeDev: options.includeDev,
     includeOptional: options.includeOptional,
   });
-  
+
   // Build a map of all project dependencies for companion upgrade analysis
   const projectDependencies: Record<string, string> = {
     ...(packageJson.dependencies || {}),
     ...(packageJson.devDependencies || {}),
     ...(packageJson.optionalDependencies || {}),
   };
-  
+
   // Skip react and react-dom themselves
-  const filteredDeps = dependencies.filter(dep => 
-    dep.name !== 'react' && dep.name !== 'react-dom'
-  );
-  
+  const filteredDeps = dependencies.filter(dep => dep.name !== 'react' && dep.name !== 'react-dom');
+
   // Analyze all dependencies in parallel with concurrency limit
   const analysisPromises = filteredDeps.map(dep =>
     analyzeDependency(dep.name, dep.version, targetReactVersion, dep.type, projectDependencies)
   );
-  
+
   const results = await Promise.all(analysisPromises);
-  
+
   // Filter to only include React-related packages
   const reactRelatedResults = results.filter(isReactRelatedPackage);
-  
+
   const hasIncompatible = reactRelatedResults.some(r => r.status === 'incompatible');
   const hasUnknown = reactRelatedResults.some(r => r.status === 'unknown');
-  
+
   return {
     targetReactVersion,
     dependencies: reactRelatedResults,
@@ -69,7 +67,7 @@ export function groupByStatus(results: DependencyAnalysis[]): {
  */
 export function getAnalysisSummary(result: AnalysisResult): string {
   const grouped = groupByStatus(result.dependencies);
-  
+
   const lines = [
     `Target React Version: ${result.targetReactVersion}`,
     `Total packages analyzed: ${result.dependencies.length}`,
@@ -77,6 +75,6 @@ export function getAnalysisSummary(result: AnalysisResult): string {
     `Incompatible: ${grouped.incompatible.length}`,
     `Unknown: ${grouped.unknown.length}`,
   ];
-  
+
   return lines.join('\n');
 }

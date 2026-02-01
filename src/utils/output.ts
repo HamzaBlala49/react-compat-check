@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import Table from 'cli-table3';
-import type { AnalysisResult, DependencyAnalysis, CompatibilityStatus } from '../types/index.js';
+import type { AnalysisResult, CompatibilityStatus } from '../types/index.js';
 
 /**
  * Get the color for a status
@@ -38,10 +38,7 @@ function formatReactRange(range: string | null): string {
 /**
  * Format version with color based on context
  */
-function formatVersion(
-  version: string | null, 
-  status: CompatibilityStatus
-): string {
+function formatVersion(version: string | null, status: CompatibilityStatus): string {
   if (version === null) {
     return chalk.dim('-');
   }
@@ -56,14 +53,16 @@ function formatVersion(
  */
 export function displayTable(result: AnalysisResult): void {
   console.log();
-  console.log(chalk.bold(`React Compatibility Check for version ${chalk.cyan(result.targetReactVersion)}`));
+  console.log(
+    chalk.bold(`React Compatibility Check for version ${chalk.cyan(result.targetReactVersion)}`)
+  );
   console.log();
-  
+
   if (result.dependencies.length === 0) {
     console.log(chalk.yellow('No React-related dependencies found.'));
     return;
   }
-  
+
   const table = new Table({
     head: [
       chalk.bold('Package'),
@@ -78,7 +77,7 @@ export function displayTable(result: AnalysisResult): void {
       border: [],
     },
   });
-  
+
   // Sort: incompatible first, then unknown, then compatible
   const sortedDeps = [...result.dependencies].sort((a, b) => {
     const order: Record<CompatibilityStatus, number> = {
@@ -88,7 +87,7 @@ export function displayTable(result: AnalysisResult): void {
     };
     return order[a.status] - order[b.status];
   });
-  
+
   for (const dep of sortedDeps) {
     table.push([
       dep.name,
@@ -99,47 +98,57 @@ export function displayTable(result: AnalysisResult): void {
       dep.latestVersion,
     ]);
   }
-  
+
   console.log(table.toString());
   console.log();
-  
+
   // Display required companion upgrades (show for nearest version as default preview)
   const depsWithRequiredUpgrades = result.dependencies.filter(
     d => d.requiredUpgradesForNearest.length > 0 || d.requiredUpgradesForLatest.length > 0
   );
   if (depsWithRequiredUpgrades.length > 0) {
     console.log(chalk.bold.magenta('📦 Required Companion Upgrades:'));
-    console.log(chalk.dim('  When upgrading these packages, you also need to upgrade their dependencies:'));
+    console.log(
+      chalk.dim('  When upgrading these packages, you also need to upgrade their dependencies:')
+    );
     console.log();
-    
+
     for (const dep of depsWithRequiredUpgrades) {
       // Show nearest compatible upgrades
       if (dep.nearestCompatibleVersion && dep.requiredUpgradesForNearest.length > 0) {
-        console.log(`  ${chalk.cyan(dep.name)} → ${chalk.green(dep.nearestCompatibleVersion)} ${chalk.dim('(nearest)')}`);
+        console.log(
+          `  ${chalk.cyan(dep.name)} → ${chalk.green(dep.nearestCompatibleVersion)} ${chalk.dim('(nearest)')}`
+        );
         for (const upgrade of dep.requiredUpgradesForNearest) {
-          console.log(`    ${chalk.yellow('└─ ↑ ')} ${chalk.bold(upgrade.name)} ${chalk.dim(upgrade.currentVersion + ' →')} ${chalk.yellow(upgrade.requiredVersion)}`);
+          console.log(
+            `    ${chalk.yellow('└─ ↑ ')} ${chalk.bold(upgrade.name)} ${chalk.dim(upgrade.currentVersion + ' →')} ${chalk.yellow(upgrade.requiredVersion)}`
+          );
         }
       }
-      
+
       // Show latest upgrades if different
       if (dep.requiredUpgradesForLatest.length > 0) {
         const latestDifferent = dep.nearestCompatibleVersion !== dep.latestVersion;
         if (latestDifferent) {
-          console.log(`  ${chalk.cyan(dep.name)} → ${chalk.blue(dep.latestVersion)} ${chalk.dim('(latest)')}`);
+          console.log(
+            `  ${chalk.cyan(dep.name)} → ${chalk.blue(dep.latestVersion)} ${chalk.dim('(latest)')}`
+          );
           for (const upgrade of dep.requiredUpgradesForLatest) {
-            console.log(`    ${chalk.yellow('└─ ↑ ')} ${chalk.bold(upgrade.name)} ${chalk.dim(upgrade.currentVersion + ' →')} ${chalk.yellow(upgrade.requiredVersion)}`);
+            console.log(
+              `    ${chalk.yellow('└─ ↑ ')} ${chalk.bold(upgrade.name)} ${chalk.dim(upgrade.currentVersion + ' →')} ${chalk.yellow(upgrade.requiredVersion)}`
+            );
           }
         }
       }
       console.log();
     }
   }
-  
+
   // Summary
   const compatible = result.dependencies.filter(d => d.status === 'compatible').length;
   const incompatible = result.dependencies.filter(d => d.status === 'incompatible').length;
   const withRequiredUpgrades = depsWithRequiredUpgrades.length;
-  
+
   console.log(chalk.bold('Summary:'));
   console.log(`  ${chalk.green('✓')} Compatible: ${compatible}`);
   console.log(`  ${chalk.red('✗')} Incompatible: ${incompatible}`);
@@ -156,7 +165,7 @@ export function outputJson(result: AnalysisResult): void {
   const depsWithRequiredUpgrades = result.dependencies.filter(
     d => d.requiredUpgradesForNearest.length > 0 || d.requiredUpgradesForLatest.length > 0
   );
-  
+
   const output = {
     targetReactVersion: result.targetReactVersion,
     summary: {
@@ -187,7 +196,7 @@ export function outputJson(result: AnalysisResult): void {
       })),
     })),
   };
-  
+
   console.log(JSON.stringify(output, null, 2));
 }
 
