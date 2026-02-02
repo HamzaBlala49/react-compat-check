@@ -1,6 +1,6 @@
 {
   "name": "react-compat-check",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CLI tool to check React dependency compatibility and upgrade packages",
   "type": "module",
   "main": "dist/index.js",
@@ -31,8 +31,16 @@
     "dependency",
     "checker"
   ],
-  "author": "",
+  "author": "HamzaBlala49",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HamzaBlala49/react-compat-check.git"
+  },
+  "homepage": "https://github.com/HamzaBlala49/react-compat-check#readme",
+  "bugs": {
+    "url": "https://github.com/HamzaBlala49/react-compat-check/issues"
+  },
   "dependencies": {
     "chalk": "^5.3.0",
     "cli-table3": "^0.6.5",
