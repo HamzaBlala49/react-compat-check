@@ -2,6 +2,8 @@
 
 A CLI tool to analyze React project dependencies and determine compatibility with a target React version.
 
+![react-compat-check screenshot](assets/images/screenshot.png)
+
 ## Installation
 
 ```bash
