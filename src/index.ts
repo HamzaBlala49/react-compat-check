@@ -23,7 +23,7 @@ const program = new Command();
 program
   .name('react-compat-check')
   .description('Check React dependency compatibility for your project')
-  .version('1.0.0')
+  .version('1.0.2')
   .option('--react <version>', 'Target React version (e.g., 18, 18.2.0, 19)')
   .option('--include-dev', 'Include devDependencies in analysis', false)
   .option('--include-optional', 'Include optionalDependencies in analysis', false)

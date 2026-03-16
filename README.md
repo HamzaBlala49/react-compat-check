@@ -2,7 +2,14 @@
 
 A CLI tool to analyze React project dependencies and determine compatibility with a target React version.
 
-![react-compat-check screenshot](assets/images/screenshot.png)
+![react-compat-check demo](assets/images/demo.gif)
+
+### Compatibility Table & Upgrade Summary
+
+<p>
+  <img src="assets/images/Screenshot_1.png" width="49%" />
+  <img src="assets/images/Screenshot_2.png" width="49%" />
+</p>
 
 ## Installation
 
@@ -29,6 +36,7 @@ npx react-compat-check
 ```
 
 This will:
+
 1. Prompt you to select a target React version
 2. Analyze all dependencies for compatibility
 3. Display a color-coded table of results
@@ -44,19 +52,20 @@ npx react-compat-check --react 19
 ```
 
 You can use:
+
 - Major versions: `18`, `19`
 - Minor versions: `18.2`
 - Exact versions: `18.2.0`
 
 ### Command Line Options
 
-| Option | Description |
-|--------|-------------|
-| `--react <version>` | Target React version to check compatibility against |
-| `--include-dev` | Include devDependencies in analysis |
-| `--include-optional` | Include optionalDependencies in analysis |
-| `--json` | Output results as JSON (machine-readable) |
-| `--fix <mode>` | Auto-fix mode: `nearest`, `latest`, or `none` |
+| Option               | Description                                         |
+| -------------------- | --------------------------------------------------- |
+| `--react <version>`  | Target React version to check compatibility against |
+| `--include-dev`      | Include devDependencies in analysis                 |
+| `--include-optional` | Include optionalDependencies in analysis            |
+| `--json`             | Output results as JSON (machine-readable)           |
+| `--fix <mode>`       | Auto-fix mode: `nearest`, `latest`, or `none`       |
 
 ### Examples
 
@@ -83,14 +92,14 @@ npx react-compat-check --react 19 --fix=latest
 
 The tool displays a table with the following columns:
 
-| Column | Description |
-|--------|-------------|
-| Package | Dependency name |
-| Installed | Currently installed version |
-| Status | Compatibility status (Compatible/Incompatible) |
-| Supported React | The React peer dependency range |
+| Column             | Description                                                    |
+| ------------------ | -------------------------------------------------------------- |
+| Package            | Dependency name                                                |
+| Installed          | Currently installed version                                    |
+| Status             | Compatibility status (Compatible/Incompatible)                 |
+| Supported React    | The React peer dependency range                                |
 | Nearest Compatible | Lowest version newer than installed that supports target React |
-| Latest | Latest published version |
+| Latest             | Latest published version                                       |
 
 ### Status Colors
 
@@ -113,6 +122,7 @@ When upgrading packages, the tool detects **companion dependencies** that also n
 ```
 
 The companion upgrades shown depend on your selection:
+
 - **Nearest compatible**: Shows companion deps required for the nearest compatible version
 - **Latest**: Shows companion deps required for the latest version
 
@@ -128,6 +138,7 @@ When incompatible packages are found, you can choose an action for each:
 ```
 
 Options:
+
 - **Upgrade to nearest compatible**: Upgrade to the lowest version that supports your target React
 - **Upgrade to latest**: Upgrade to the latest published version
 - **Skip**: Keep the current version, move to the next package
@@ -149,11 +160,11 @@ The following changes will be made:
 
 ## Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| `0` | All dependencies are compatible |
-| `1` | Incompatible dependencies detected |
-| `2` | Runtime or network error |
+| Code | Meaning                            |
+| ---- | ---------------------------------- |
+| `0`  | All dependencies are compatible    |
+| `1`  | Incompatible dependencies detected |
+| `2`  | Runtime or network error           |
 
 ## CI/CD Integration
 
@@ -216,11 +227,11 @@ npx react-compat-check --react 19 --fix=none || exit 1
 
 The tool automatically detects your package manager based on lockfiles:
 
-| Lockfile | Package Manager |
-|----------|-----------------|
-| `pnpm-lock.yaml` | pnpm |
-| `yarn.lock` | yarn |
-| `package-lock.json` | npm |
+| Lockfile            | Package Manager |
+| ------------------- | --------------- |
+| `pnpm-lock.yaml`    | pnpm            |
+| `yarn.lock`         | yarn            |
+| `package-lock.json` | npm             |
 
 ## Limitations
 

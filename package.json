@@ -1,6 +1,6 @@
 {
   "name": "react-compat-check",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "CLI tool to check React dependency compatibility and upgrade packages",
   "type": "module",
   "main": "dist/index.js",
